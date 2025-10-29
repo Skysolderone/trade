@@ -1,0 +1,12 @@
+{
+  "symbols": [
+    {
+      "symbol": "BTCUSDT",
+      "intervals": ["1d"]
+    },
+    {
+      "symbol": "ETHUSDT",
+      "intervals": ["1d"]
+    }
+  ]
+}

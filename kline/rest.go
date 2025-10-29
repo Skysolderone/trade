@@ -13,21 +13,57 @@ import (
 	"github.com/adshao/go-binance/v2/futures"
 )
 
-func GetKline(symbol string, interval string) {
-	api := futures.NewClient("", "")
+func UpdateKline(symbol string, interval string) {
+	// 查询数据库中该交易对的最新记录
+	var latestKline model.Kline
+	result := db.Pog.Where("symbol = ?", symbol).
+		Order("close_time DESC").
+		Limit(1).
+		Find(&latestKline)
 
-	// 获取所有K线数据
-	getAllKlines(api, symbol, interval)
+	var startTime time.Time
+	if result.Error != nil || result.RowsAffected == 0 {
+		// 如果没有找到记录,从默认时间开始
+		fmt.Printf("未找到 %s 的历史数据,将从 2018-01-01 开始获取\n", symbol)
+		startTime = time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+	} else {
+		// 删除最新记录(因为它可能是不完整的)
+		deleteResult := db.Pog.Delete(&latestKline)
+		if deleteResult.Error != nil {
+			fmt.Printf("删除最新记录失败: %v\n", deleteResult.Error)
+			return
+		}
+		fmt.Printf("已删除 %s 的最新记录: %s\n",
+			symbol,
+			latestKline.CloseTime.Format("2006-01-02 15:04:05"))
+
+		// 从被删除记录的开始时间重新获取
+		startTime = latestKline.OpenTime
+		fmt.Printf("将从 %s 开始重新获取数据\n", startTime.Format("2006-01-02 15:04:05"))
+	}
+
+	// 结束时间设置为昨日最后一刻
+	now := time.Now().UTC()
+	yesterday := now.AddDate(0, 0, -1)
+	endTime := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 23, 59, 59, 0, time.UTC)
+
+	// 如果开始时间已经超过结束时间,说明数据已经是最新的
+	if startTime.After(endTime) {
+		fmt.Printf("%s 的数据已经是最新的,无需更新\n", symbol)
+		return
+	}
+
+	// 调用更新函数
+	updateKlineData(db.BinanceClient, symbol, interval, startTime, endTime)
 }
 
-// getAllKlines 分页获取所有K线数据
-func getAllKlines(api *futures.Client, symbol string, interval string) {
-	// 设置开始时间（可以根据需要调整）
-	startTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
-	// 结束时间设置为今日零点
-	now := time.Now()
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+func GetKline(symbol string, interval string) {
+	// 使用全局币安客户端
+	getAllKlines(db.BinanceClient, symbol, interval)
+}
 
+// updateKlineData 更新K线数据(支持自定义时间范围)
+func updateKlineData(api *futures.Client, symbol string, interval string, startTime, endTime time.Time) {
 	totalCount := 0
 	var lastKlineTime time.Time
 
@@ -81,7 +117,7 @@ func getAllKlines(api *futures.Client, symbol string, interval string) {
 				Min:       strconv.Itoa(openTime.Minute()),
 			}
 
-			// 这里可以添加数据库保存逻辑
+			// 保存到数据库
 			result := db.Pog.Create(&klineModel)
 			if result.Error != nil {
 				fmt.Println(result.Error)
@@ -116,6 +152,18 @@ func getAllKlines(api *futures.Client, symbol string, interval string) {
 	if !lastKlineTime.IsZero() {
 		fmt.Printf("最后一条K线时间: %s\n", lastKlineTime.Format("2006-01-02 15:04:05"))
 	}
+}
+
+// getAllKlines 分页获取所有K线数据
+func getAllKlines(api *futures.Client, symbol string, interval string) {
+	// 设置开始时间（可以根据需要调整）
+	startTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+	// 结束时间设置为今日零点
+	now := time.Now()
+	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
+	// 调用统一的更新函数
+	updateKlineData(api, symbol, interval, startTime, endTime)
 }
 
 // getIntervalDuration 根据间隔字符串返回对应的时长
