@@ -44,6 +44,9 @@ func InitPostgreSql() *gorm.DB {
 	err = Pog.AutoMigrate(&model.Kline{})
 	if err != nil {
 		log.Printf("自动迁移失败: %v", err)
+	} else {
+		log.Println("数据库表结构迁移成功")
+		log.Println("已创建唯一索引: idx_unique_kline (symbol + interval + open_time)")
 	}
 
 	log.Println("数据库连接成功")

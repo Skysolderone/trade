@@ -1,5 +1,5 @@
 # CLAUDE.md
-
+没有要求不需要输出总结文档
 这个文件为 Claude Code (claude.ai/code) 提供在此代码库中工作的指导。
 
 ## 项目概述

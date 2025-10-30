@@ -38,7 +38,7 @@ func main() {
 
 	fmt.Println("\n========== 所有数据更新完成 ==========")
 
-	// 运行策略一: 分析历史同期涨跌概率
+	// 运行策略一: 分析历史同期涨跌概率（传入配置文件）
 	fmt.Println("\n========== 开始运行策略一 ==========")
-	strategy.Strategy1()
+	strategy.Strategy1(config)
 }
