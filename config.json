@@ -2,11 +2,11 @@
   "symbols": [
     {
       "symbol": "BTCUSDT",
-      "intervals": ["1d"]
+      "intervals": ["1d", "8h", "4h", "2h", "1h"]
     },
     {
       "symbol": "ETHUSDT",
-      "intervals": ["1d"]
+      "intervals": ["1d", "8h", "4h", "2h", "1h"]
     }
   ]
 }
