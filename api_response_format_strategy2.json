@@ -1,0 +1,160 @@
+{
+  "code": 0,
+  "message": "分析成功",
+  "timestamp": 1698764800,
+  "data": {
+    "strategy_info": {
+      "strategy_type": "strategy_2",
+      "strategy_name": "小时级别涨跌分析",
+      "description": "分析特定小时的历史涨跌表现，通过24小时对比找出最佳交易时段",
+      "analysis_method": "从PostgreSQL数据库查询历史K线数据，按小时(hour)字段分组统计不同时段的涨跌概率"
+    },
+    "analysis_target": {
+      "symbol": "BTCUSDT",
+      "interval": "1h",
+      "analysis_datetime": "2024-10-30 14:00:00",
+      "target_hour": 14
+    },
+    "data_statistics": {
+      "data_source": "币安合约历史K线数据",
+      "date_range": {
+        "start_date": "2018-01-01",
+        "end_date": "2024-10-30"
+      },
+      "total_records_used": 2500,
+      "query_method": "按symbol、interval和hour字段查询数据库Kline表"
+    },
+    "current_hour_result": {
+      "hour_label": "14:00",
+      "sample_count": 120,
+      "up_count": 78,
+      "down_count": 40,
+      "flat_count": 2,
+      "up_rate": 65.0,
+      "down_rate": 33.33,
+      "reliability": "high",
+      "reliability_note": "样本数量充足(>100条)，统计结果可靠性高"
+    },
+    "hourly_comparison": {
+      "title": "24小时对比",
+      "description": "对比24个小时时段，找出历史表现最好和最差的交易时段",
+      "hours_analyzed": 24,
+      "average_up_rate": 52.5,
+      "best_hour": {
+        "hour": 14,
+        "hour_label": "14:00-15:00",
+        "up_rate": 68.5,
+        "sample_count": 120,
+        "up_count": 82,
+        "down_count": 38,
+        "performance_note": "历史表现最佳时段"
+      },
+      "worst_hour": {
+        "hour": 3,
+        "hour_label": "03:00-04:00",
+        "up_rate": 42.8,
+        "sample_count": 115,
+        "up_count": 49,
+        "down_count": 66,
+        "performance_note": "历史表现最差时段"
+      },
+      "current_hour_ranking": {
+        "rank": 2,
+        "total_hours": 24,
+        "performance_level": "excellent",
+        "performance_note": "当前时段历史表现优秀，排名前10%"
+      }
+    },
+    "high_win_hours": {
+      "title": "高胜率时段推荐",
+      "description": "上涨率≥60%且样本数≥10的时段",
+      "count": 3,
+      "hours": [
+        {
+          "hour": 14,
+          "hour_label": "14:00",
+          "up_rate": 68.5,
+          "sample_count": 120
+        },
+        {
+          "hour": 9,
+          "hour_label": "09:00",
+          "up_rate": 65.2,
+          "sample_count": 118
+        },
+        {
+          "hour": 21,
+          "hour_label": "21:00",
+          "up_rate": 63.1,
+          "sample_count": 125
+        }
+      ]
+    },
+    "low_win_hours": {
+      "title": "低胜率时段警示",
+      "description": "上涨率<45%的时段，建议谨慎交易",
+      "count": 2,
+      "hours": [
+        {
+          "hour": 3,
+          "hour_label": "03:00",
+          "up_rate": 42.8,
+          "sample_count": 115
+        },
+        {
+          "hour": 6,
+          "hour_label": "06:00",
+          "up_rate": 44.2,
+          "sample_count": 110
+        }
+      ]
+    },
+    "time_zone_analysis": {
+      "title": "时区特征分析",
+      "asian_session": {
+        "hours": "00:00-08:00(UTC)",
+        "average_up_rate": 48.5,
+        "characteristic": "波动较小，胜率偏低"
+      },
+      "european_session": {
+        "hours": "08:00-16:00(UTC)",
+        "average_up_rate": 58.2,
+        "characteristic": "活跃度上升，胜率较高"
+      },
+      "american_session": {
+        "hours": "16:00-24:00(UTC)",
+        "average_up_rate": 54.3,
+        "characteristic": "波动加大，胜率中等"
+      }
+    },
+    "trading_recommendation": {
+      "signal": "bullish",
+      "confidence_level": "high",
+      "confidence_score": 65.0,
+      "main_reason": "当前时段(14:00)历史上涨概率为65%，在24小时中排名第2位",
+      "supporting_factors": [
+        "样本数量充足(120条)，统计结果可靠",
+        "当前时段属于高胜率时段(>60%)",
+        "处于欧洲交易时段，市场活跃度高"
+      ],
+      "optimal_trading_hours": [
+        "14:00(当前时段，最佳)",
+        "09:00(次佳时段)",
+        "21:00(晚间高胜率时段)"
+      ],
+      "avoid_trading_hours": [
+        "03:00(凌晨低胜率时段)",
+        "06:00(早晨低胜率时段)"
+      ]
+    },
+    "risk_warning": {
+      "level": "medium",
+      "warnings": [
+        "历史时段数据不代表未来表现，市场随时可能变化",
+        "重大新闻和事件可能改变时段特征",
+        "请结合实时行情、成交量、技术指标综合判断",
+        "建议设置止损止盈，控制单笔交易风险"
+      ]
+    }
+  }
+}

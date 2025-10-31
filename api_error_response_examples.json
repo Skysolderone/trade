@@ -1,0 +1,214 @@
+{
+  "examples": [
+    {
+      "scenario": "参数错误 - 缺少必需参数",
+      "response": {
+        "code": 1001,
+        "message": "参数错误：缺少symbol参数",
+        "timestamp": 1698764800,
+        "data": null
+      }
+    },
+    {
+      "scenario": "参数错误 - 参数值无效",
+      "response": {
+        "code": 1001,
+        "message": "参数错误：interval只支持1m,5m,15m,30m,1h,2h,4h,8h,1d,1w",
+        "timestamp": 1698764800,
+        "data": null
+      }
+    },
+    {
+      "scenario": "数据不存在 - 没有找到历史数据",
+      "response": {
+        "code": 1002,
+        "message": "未找到BTCUSDT在10-30的历史数据",
+        "timestamp": 1698764800,
+        "data": {
+          "strategy_info": {
+            "strategy_type": "strategy_1",
+            "strategy_name": "历史同期涨跌分析"
+          },
+          "analysis_target": {
+            "symbol": "BTCUSDT",
+            "interval": "1d",
+            "target_period": "10-30"
+          },
+          "current_period_result": {
+            "sample_count": 0,
+            "up_count": 0,
+            "down_count": 0,
+            "flat_count": 0,
+            "up_rate": 0,
+            "reliability": "none",
+            "reliability_note": "无历史数据"
+          },
+          "risk_warning": {
+            "level": "high",
+            "warnings": [
+              "无历史数据，无法提供分析结果"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "scenario": "样本量不足 - 数据过少不可靠",
+      "response": {
+        "code": 1003,
+        "message": "样本量不足，统计结果可能不可靠",
+        "timestamp": 1698764800,
+        "data": {
+          "strategy_info": {
+            "strategy_type": "strategy_1",
+            "strategy_name": "历史同期涨跌分析"
+          },
+          "analysis_target": {
+            "symbol": "BTCUSDT",
+            "interval": "1d",
+            "target_period": "02-30"
+          },
+          "current_period_result": {
+            "sample_count": 2,
+            "up_count": 1,
+            "down_count": 1,
+            "flat_count": 0,
+            "up_rate": 50.0,
+            "reliability": "low",
+            "reliability_note": "样本数量过少(仅2条)，统计结果不可靠"
+          },
+          "trading_recommendation": {
+            "signal": "neutral",
+            "confidence_level": "low",
+            "confidence_score": 50.0,
+            "main_reason": "样本量不足，无法给出可靠建议",
+            "risk_factors": [
+              "样本量仅2条，远低于统计要求",
+              "建议谨慎参考或等待更多数据积累"
+            ]
+          },
+          "risk_warning": {
+            "level": "high",
+            "warnings": [
+              "样本量严重不足，统计结果不具备参考价值",
+              "建议使用其他日期或分析方法"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "scenario": "服务器内部错误 - 数据库连接失败",
+      "response": {
+        "code": 5000,
+        "message": "服务器内部错误：数据库连接失败",
+        "timestamp": 1698764800,
+        "data": null
+      }
+    },
+    {
+      "scenario": "服务器内部错误 - 数据查询异常",
+      "response": {
+        "code": 5000,
+        "message": "服务器内部错误：数据查询异常",
+        "timestamp": 1698764800,
+        "data": null
+      }
+    },
+    {
+      "scenario": "特殊日期 - 2月30日不存在",
+      "response": {
+        "code": 1001,
+        "message": "参数错误：日期不存在(2月没有30日)",
+        "timestamp": 1698764800,
+        "data": null
+      }
+    },
+    {
+      "scenario": "成功但有警告 - 部分数据缺失",
+      "response": {
+        "code": 0,
+        "message": "分析成功，但部分月份数据缺失",
+        "timestamp": 1698764800,
+        "data": {
+          "strategy_info": {
+            "strategy_type": "strategy_1",
+            "strategy_name": "历史同期涨跌分析"
+          },
+          "analysis_target": {
+            "symbol": "BTCUSDT",
+            "interval": "1d",
+            "target_period": "10-30"
+          },
+          "current_period_result": {
+            "sample_count": 5,
+            "up_count": 3,
+            "down_count": 2,
+            "flat_count": 0,
+            "up_rate": 60.0,
+            "reliability": "medium"
+          },
+          "cross_month_analysis": {
+            "months_analyzed": 8,
+            "data_missing_months": [2, 4, 9, 11],
+            "note": "部分月份没有30日或数据缺失"
+          },
+          "risk_warning": {
+            "level": "medium",
+            "warnings": [
+              "部分月份数据缺失，跨月对比可能不完整",
+              "建议以跨年对比为主要参考"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "status_code_reference": {
+    "0": {
+      "name": "成功",
+      "description": "请求成功，返回完整数据",
+      "client_action": "正常展示数据"
+    },
+    "1001": {
+      "name": "参数错误",
+      "description": "请求参数缺失或格式错误",
+      "client_action": "提示用户检查输入参数"
+    },
+    "1002": {
+      "name": "数据不存在",
+      "description": "未找到符合条件的历史数据",
+      "client_action": "提示用户该交易对或时间段暂无数据"
+    },
+    "1003": {
+      "name": "样本量不足",
+      "description": "数据量过少，统计结果不可靠",
+      "client_action": "显示警告，建议用户谨慎参考"
+    },
+    "5000": {
+      "name": "服务器内部错误",
+      "description": "服务器处理异常",
+      "client_action": "提示用户稍后重试，并联系技术支持"
+    }
+  },
+  "best_practices": {
+    "error_handling": [
+      "客户端应根据code字段判断请求状态",
+      "code=0时才展示data中的业务数据",
+      "code!=0时应显示message内容给用户",
+      "对于1003样本量不足的情况，虽然code!=0，但data中有部分数据，可展示但需加强风险提示"
+    ],
+    "retry_strategy": [
+      "1001参数错误：不要重试，检查参数后重新请求",
+      "1002数据不存在：不要重试，更换查询条件",
+      "1003样本量不足：可以展示数据但需警告",
+      "5000服务器错误：可以重试2-3次，间隔1-3秒"
+    ],
+    "user_experience": [
+      "对于样本量不足的情况，建议在UI上明确标注",
+      "建议添加'数据可靠性'指示器（如绿色/黄色/红色）",
+      "当reliability为low时，建议弱化展示或不展示交易建议",
+      "风险警告应明显展示，避免用户误解"
+    ]
+  }
+}
