@@ -6,6 +6,7 @@ import (
 
 	"trade/db"
 	"trade/kline"
+	"trade/strategy"
 	"trade/utils"
 )
 
@@ -38,6 +39,10 @@ func main() {
 	fmt.Println("\n========== 所有数据更新完成 ==========")
 
 	// 运行策略一: 分析历史同期涨跌概率（传入配置文件）
-	// fmt.Println("\n========== 开始运行策略一 ==========")
-	// strategy.Strategy1(config)
+	fmt.Println("\n========== 开始运行策略一 ==========")
+	strategy.Strategy1(config)
+
+	// 运行策略二: 小时级别涨跌分析
+	fmt.Println("\n========== 开始运行策略二 ==========")
+	strategy.Strategy2(config)
 }
