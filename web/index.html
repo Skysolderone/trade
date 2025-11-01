@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易策略分析结果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #ebebeb;
+        }
+
+        .tab.active {
+            color: #667eea;
+            background: white;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-end;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            display: grid;
+            gap: 20px;
+        }
+
+        .result-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .card-header h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card-header .meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .card-header .meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-value.up {
+            color: #4caf50;
+        }
+
+        .stat-value.down {
+            color: #f44336;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.up {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .badge.down {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .badge.flat {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .detail-toggle {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            color: #666;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .detail-toggle:hover {
+            background: #ebebeb;
+        }
+
+        .details-table {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .details-table.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 交易策略分析结果</h1>
+            <p>基于历史数据的涨跌概率分析系统</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('strategy1')">
+                📊 策略一：历史同期分析
+            </div>
+            <div class="tab" onclick="switchTab('strategy2')">
+                🕐 策略二：小时级别分析
+            </div>
+        </div>
+
+        <!-- 策略一内容 -->
+        <div id="strategy1" class="tab-content active">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>交易对</label>
+                    <input type="text" id="s1-symbol" placeholder="例如：BTCUSDT">
+                </div>
+                <div class="filter-group">
+                    <label>时间周期</label>
+                    <select id="s1-interval">
+                        <option value="">全部</option>
+                        <option value="1m">1分钟</option>
+                        <option value="5m">5分钟</option>
+                        <option value="15m">15分钟</option>
+                        <option value="1h">1小时</option>
+                        <option value="4h">4小时</option>
+                        <option value="1d">1天</option>
+                    </select>
+                </div>
+                <button onclick="loadStrategy1()">查询</button>
+            </div>
+            <div id="strategy1-results" class="results">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 策略二内容 -->
+        <div id="strategy2" class="tab-content">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>交易对</label>
+                    <input type="text" id="s2-symbol" placeholder="例如：BTCUSDT">
+                </div>
+                <div class="filter-group">
+                    <label>时间周期</label>
+                    <select id="s2-interval">
+                        <option value="">全部</option>
+                        <option value="1h">1小时</option>
+                        <option value="2h">2小时</option>
+                        <option value="4h">4小时</option>
+                        <option value="8h">8小时</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>小时</label>
+                    <select id="s2-hour">
+                        <option value="">全部</option>
+                        <script>
+                            for(let i = 0; i < 24; i++) {
+                                document.write(`<option value="${i}">${i}:00</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+                <button onclick="loadStrategy2()">查询</button>
+            </div>
+            <div id="strategy2-results" class="results">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签
+        function switchTab(tabName) {
+            // 更新标签状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 更新内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            // 自动加载数据
+            if (tabName === 'strategy1') {
+                loadStrategy1();
+            } else {
+                loadStrategy2();
+            }
+        }
+
+        // 加载策略一数据
+        async function loadStrategy1() {
+            const symbol = document.getElementById('s1-symbol').value;
+            const interval = document.getElementById('s1-interval').value;
+            const resultsDiv = document.getElementById('strategy1-results');
+
+            resultsDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const params = new URLSearchParams();
+                if (symbol) params.append('symbol', symbol);
+                if (interval) params.append('interval', interval);
+
+                const response = await fetch(`/api/strategy1?${params}`);
+                const data = await response.json();
+
+                if (!data.results || data.results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty">暂无数据</div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = data.results.map((result, index) => `
+                    <div class="result-card">
+                        <div class="card-header">
+                            <h3>${result.symbol} - ${result.interval}</h3>
+                            <div class="meta">
+                                <span>📅 分析日期: ${result.analyze_day}</span>
+                                <span>📊 样本数: ${result.total_count}</span>
+                                <span>🔄 更新时间: ${new Date(result.updated_at).toLocaleString('zh-CN')}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-label">上涨率</div>
+                                    <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${result.up_rate}%">
+                                            ${result.up_rate.toFixed(1)}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">上涨/下跌/平盘</div>
+                                    <div class="stat-value">${result.up_count}/${result.down_count}/${result.flat_count}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">最佳月份</div>
+                                    <div class="stat-value up">${result.best_month}月 (${result.best_up_rate.toFixed(2)}%)</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">最差月份</div>
+                                    <div class="stat-value down">${result.worst_month}月 (${result.worst_up_rate.toFixed(2)}%)</div>
+                                </div>
+                            </div>
+
+                            ${result.details && result.details.length > 0 ? `
+                                <button class="detail-toggle" onclick="toggleDetails(${index}, 's1')">
+                                    查看详细记录 (${result.details.length}条)
+                                </button>
+                                <div id="s1-details-${index}" class="details-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>年份</th>
+                                                <th>开盘价</th>
+                                                <th>收盘价</th>
+                                                <th>价差</th>
+                                                <th>涨跌</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${result.details.map(detail => `
+                                                <tr>
+                                                    <td>${detail.year}</td>
+                                                    <td>${detail.open_price.toFixed(2)}</td>
+                                                    <td>${detail.close_price.toFixed(2)}</td>
+                                                    <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
+                                                    <td>
+                                                        <span class="badge ${detail.is_up ? 'up' : 'down'}">
+                                                            ${detail.is_up ? '📈 涨' : '📉 跌'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载策略二数据
+        async function loadStrategy2() {
+            const symbol = document.getElementById('s2-symbol').value;
+            const interval = document.getElementById('s2-interval').value;
+            const hour = document.getElementById('s2-hour').value;
+            const resultsDiv = document.getElementById('strategy2-results');
+
+            resultsDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const params = new URLSearchParams();
+                if (symbol) params.append('symbol', symbol);
+                if (interval) params.append('interval', interval);
+                if (hour) params.append('hour', hour);
+
+                const response = await fetch(`/api/strategy2?${params}`);
+                const data = await response.json();
+
+                if (!data.results || data.results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty">暂无数据</div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = data.results.map((result, index) => `
+                    <div class="result-card">
+                        <div class="card-header">
+                            <h3>${result.symbol} - ${result.interval} - ${result.hour}:00</h3>
+                            <div class="meta">
+                                <span>⏰ 时段: ${result.hour}:00</span>
+                                <span>📊 样本数: ${result.total_count}</span>
+                                <span>🔄 更新时间: ${new Date(result.updated_at).toLocaleString('zh-CN')}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-label">上涨率</div>
+                                    <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${result.up_rate}%">
+                                            ${result.up_rate.toFixed(1)}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">上涨次数</div>
+                                    <div class="stat-value up">${result.up_count}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">下跌次数</div>
+                                    <div class="stat-value down">${result.down_count}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">平盘次数</div>
+                                    <div class="stat-value">${result.flat_count}</div>
+                                </div>
+                            </div>
+
+                            ${result.details && result.details.length > 0 ? `
+                                <button class="detail-toggle" onclick="toggleDetails(${index}, 's2')">
+                                    查看详细记录 (${result.details.length}条)
+                                </button>
+                                <div id="s2-details-${index}" class="details-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>日期</th>
+                                                <th>开盘价</th>
+                                                <th>收盘价</th>
+                                                <th>价差</th>
+                                                <th>涨跌</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${result.details.map(detail => `
+                                                <tr>
+                                                    <td>${detail.date}</td>
+                                                    <td>${detail.open_price.toFixed(2)}</td>
+                                                    <td>${detail.close_price.toFixed(2)}</td>
+                                                    <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
+                                                    <td>
+                                                        <span class="badge ${detail.is_up ? 'up' : 'down'}">
+                                                            ${detail.is_up ? '📈 涨' : '📉 跌'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 切换详细记录显示
+        function toggleDetails(index, strategy) {
+            const detailsDiv = document.getElementById(`${strategy}-details-${index}`);
+            detailsDiv.classList.toggle('show');
+        }
+
+        // 页面加载时自动加载策略一数据
+        window.onload = () => {
+            loadStrategy1();
+        };
+    </script>
+</body>
+</html>

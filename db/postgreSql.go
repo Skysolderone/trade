@@ -41,12 +41,19 @@ func InitPostgreSql() *gorm.DB {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// 自动迁移表结构
-	err = Pog.AutoMigrate(&model.Kline{})
+	err = Pog.AutoMigrate(
+		&model.Kline{},
+		&model.Strategy1Result{},
+		&model.Strategy1DetailRecord{},
+		&model.Strategy2Result{},
+		&model.Strategy2DetailRecord{},
+	)
 	if err != nil {
 		log.Printf("自动迁移失败: %v", err)
 	} else {
 		log.Println("数据库表结构迁移成功")
 		log.Println("已创建唯一索引: idx_unique_kline (symbol + interval + open_time)")
+		log.Println("已创建策略结果表")
 	}
 
 	log.Println("数据库连接成功")

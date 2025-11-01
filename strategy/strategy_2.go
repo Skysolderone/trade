@@ -79,7 +79,10 @@ func analyzeHourlyPattern(symbol, interval string, currentHour int) {
 	// 2. 分析24小时的整体表现
 	allHourStats := analyzeAll24Hours(symbol, interval)
 
-	// 3. 输出分析结果
+	// 3. 保存结果到数据库
+	saveStrategy2Result(symbol, interval, allHourStats)
+
+	// 4. 输出分析结果
 	printHourlyAnalysis(currentHourStats, allHourStats, currentHour, interval)
 }
 
@@ -321,4 +324,49 @@ func printBestAndWorstHours(allStats []*HourStats, currentHour int) {
 
 	fmt.Printf("\n⚠️  风险提示：历史数据不代表未来表现，请结合实时行情和其他技术指标综合判断！\n")
 	fmt.Printf("════════════════════════════════════════════════════════════════\n\n")
+}
+
+// saveStrategy2Result 保存策略二结果到数据库
+func saveStrategy2Result(symbol, interval string, allHourStats []*HourStats) {
+	for _, hourStat := range allHourStats {
+		// 创建或更新策略二结果
+		result := &model.Strategy2Result{
+			Symbol:     symbol,
+			Interval:   interval,
+			Hour:       hourStat.Hour,
+			TotalCount: hourStat.TotalCount,
+			UpCount:    hourStat.UpCount,
+			DownCount:  hourStat.DownCount,
+			FlatCount:  hourStat.FlatCount,
+			UpRate:     hourStat.UpRate,
+		}
+
+		// 使用upsert保存结果
+		err := db.Pog.Where("symbol = ? AND interval = ? AND hour = ?", symbol, interval, hourStat.Hour).
+			Assign(result).
+			FirstOrCreate(result).Error
+
+		if err != nil {
+			fmt.Printf("⚠️ 保存策略二结果失败: %v\n", err)
+			continue
+		}
+
+		// 删除旧的详细记录
+		db.Pog.Where("result_id = ?", result.ID).Delete(&model.Strategy2DetailRecord{})
+
+		// 保存详细记录
+		for _, record := range hourStat.Records {
+			detailRecord := &model.Strategy2DetailRecord{
+				ResultID:   result.ID,
+				Date:       record.Year,
+				OpenPrice:  record.OpenPrice,
+				ClosePrice: record.ClosePrice,
+				PriceDiff:  record.PriceDiff,
+				IsUp:       record.IsUp,
+			}
+			if err := db.Pog.Create(detailRecord).Error; err != nil {
+				fmt.Printf("⚠️ 保存详细记录失败: %v\n", err)
+			}
+		}
+	}
 }

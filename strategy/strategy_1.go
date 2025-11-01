@@ -81,7 +81,10 @@ func analyzeSymbolInterval(symbol, interval string, month, day int) {
 	// 3. 分析所有年份同一日期（例如：2018-10-30, 2019-10-30...）- 跨年对比
 	allYearStats := analyzeAllYearsSameDate(symbol, interval, month, day)
 
-	// 4. 输出对比结果
+	// 4. 保存结果到数据库
+	saveStrategy1Result(symbol, interval, month, day, currentDayStats, allMonthStats, allYearStats)
+
+	// 5. 输出对比结果
 	printComparisonResults(currentDayStats, allMonthStats, allYearStats, month, day)
 }
 
@@ -437,4 +440,75 @@ func isValidDate(month, day int) bool {
 		return false
 	}
 	return day >= 1 && day <= daysInMonth[month]
+}
+
+// saveStrategy1Result 保存策略一结果到数据库
+func saveStrategy1Result(symbol, interval string, month, day int, currentStats *DayStats, allMonthStats []*DayStats, allYearRecords []KlineRecord) {
+	analyzeDay := fmt.Sprintf("%02d-%02d", month, day)
+
+	// 找出最佳和最差月份
+	var bestMonth, worstMonth int
+	var bestUpRate, worstUpRate float64
+	if len(allMonthStats) > 0 {
+		best := allMonthStats[0]
+		worst := allMonthStats[0]
+		for _, stat := range allMonthStats {
+			if stat.UpRate > best.UpRate {
+				best = stat
+			}
+			if stat.UpRate < worst.UpRate {
+				worst = stat
+			}
+		}
+		bestMonth = best.Month
+		bestUpRate = best.UpRate
+		worstMonth = worst.Month
+		worstUpRate = worst.UpRate
+	}
+
+	// 创建或更新策略一结果
+	result := &model.Strategy1Result{
+		Symbol:      symbol,
+		Interval:    interval,
+		AnalyzeDay:  analyzeDay,
+		Month:       month,
+		Day:         day,
+		TotalCount:  currentStats.TotalCount,
+		UpCount:     currentStats.UpCount,
+		DownCount:   currentStats.DownCount,
+		FlatCount:   currentStats.FlatCount,
+		UpRate:      currentStats.UpRate,
+		BestMonth:   bestMonth,
+		BestUpRate:  bestUpRate,
+		WorstMonth:  worstMonth,
+		WorstUpRate: worstUpRate,
+	}
+
+	// 使用upsert保存结果
+	err := db.Pog.Where("symbol = ? AND interval = ? AND analyze_day = ?", symbol, interval, analyzeDay).
+		Assign(result).
+		FirstOrCreate(result).Error
+
+	if err != nil {
+		fmt.Printf("⚠️ 保存策略一结果失败: %v\n", err)
+		return
+	}
+
+	// 删除旧的详细记录
+	db.Pog.Where("result_id = ?", result.ID).Delete(&model.Strategy1DetailRecord{})
+
+	// 保存详细记录
+	for _, record := range allYearRecords {
+		detailRecord := &model.Strategy1DetailRecord{
+			ResultID:   result.ID,
+			Year:       record.Year,
+			OpenPrice:  record.OpenPrice,
+			ClosePrice: record.ClosePrice,
+			PriceDiff:  record.PriceDiff,
+			IsUp:       record.IsUp,
+		}
+		if err := db.Pog.Create(detailRecord).Error; err != nil {
+			fmt.Printf("⚠️ 保存详细记录失败: %v\n", err)
+		}
+	}
 }
