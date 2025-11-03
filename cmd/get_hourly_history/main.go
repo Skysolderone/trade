@@ -59,31 +59,68 @@ func main() {
 	for _, symbolConfig := range config.Symbols {
 		fmt.Printf("\n========== 处理交易对: %s ==========\n", symbolConfig.Symbol)
 
-		// 先从数据库查询该交易对1d数据的最早时间
-		var earliestKline model.Kline
-		result := db.Pog.Where("symbol = ? AND interval = ?", symbolConfig.Symbol, "1d").
-			Order("open_time ASC").
-			Limit(1).
-			Find(&earliestKline)
-
-		var startTime time.Time
-		if result.Error != nil || result.RowsAffected == 0 {
-			// 如果数据库没有1d数据，通过API查询最早时间
-			fmt.Printf("📊 数据库中没有 %s 的1d数据，通过API查询最早时间...\n", symbolConfig.Symbol)
-			startTime = getEarliestKlineTime(db.BinanceClient, symbolConfig.Symbol)
-		} else {
-			startTime = earliestKline.OpenTime
-			fmt.Printf("📅 从数据库获取最早时间: %s\n", startTime.Format("2006-01-02"))
-		}
-
 		for _, interval := range hourlyIntervals {
 			fmt.Printf("\n--- 时间区间: %s ---\n", interval)
-			fmt.Printf("从 %s 开始获取数据...\n", startTime.Format("2006-01-02"))
+
+			// 先查询该交易对该时间周期的最新记录
+			var latestKline model.Kline
+			result := db.Pog.Where("symbol = ? AND interval = ?", symbolConfig.Symbol, interval).
+				Order("close_time DESC").
+				Limit(1).
+				Find(&latestKline)
+
+			var startTime time.Time
+			var updateMode string
+
+			if result.Error != nil || result.RowsAffected == 0 {
+				// 没有该时间周期的数据，需要全量获取
+				updateMode = "全量获取"
+				fmt.Printf("📊 数据库中没有 %s %s 的数据，准备全量获取...\n", symbolConfig.Symbol, interval)
+
+				// 先从数据库查询该交易对1d数据的最早时间
+				var earliestKline model.Kline
+				result1d := db.Pog.Where("symbol = ? AND interval = ?", symbolConfig.Symbol, "1d").
+					Order("open_time ASC").
+					Limit(1).
+					Find(&earliestKline)
+
+				if result1d.Error != nil || result1d.RowsAffected == 0 {
+					// 如果数据库没有1d数据，通过API查询最早时间
+					fmt.Printf("📊 数据库中没有 %s 的1d数据，通过API查询最早时间...\n", symbolConfig.Symbol)
+					startTime = getEarliestKlineTime(db.BinanceClient, symbolConfig.Symbol)
+				} else {
+					startTime = earliestKline.OpenTime
+					fmt.Printf("📅 从1d数据获取最早时间: %s\n", startTime.Format("2006-01-02"))
+				}
+			} else {
+				// 有数据，增量更新
+				updateMode = "增量更新"
+				fmt.Printf("✅ 找到最新记录: %s\n", latestKline.CloseTime.Format("2006-01-02 15:04:05"))
+
+				// 删除最新记录(因为它可能是不完整的)
+				deleteResult := db.Pog.Delete(&latestKline)
+				if deleteResult.Error != nil {
+					fmt.Printf("❌ 删除最新记录失败: %v\n", deleteResult.Error)
+					continue
+				}
+				fmt.Printf("🗑️  已删除最新记录，将从 %s 重新获取\n", latestKline.OpenTime.Format("2006-01-02 15:04:05"))
+
+				// 从被删除记录的开始时间重新获取
+				startTime = latestKline.OpenTime
+			}
 
 			// 计算结束时间（昨天）
 			now := time.Now().UTC()
 			yesterday := now.AddDate(0, 0, -1)
 			endTime := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 23, 59, 59, 0, time.UTC)
+
+			// 如果开始时间已经超过结束时间，说明数据已经是最新的
+			if startTime.After(endTime) {
+				fmt.Printf("✅ %s %s 的数据已经是最新的，无需更新\n", symbolConfig.Symbol, interval)
+				continue
+			}
+
+			fmt.Printf("🚀 开始%s: 从 %s 到 %s\n", updateMode, startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 
 			// 手动调用updateKlineData获取指定时间范围的数据
 			updateKlineData(db.BinanceClient, symbolConfig.Symbol, interval, startTime, endTime)

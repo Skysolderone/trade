@@ -5,6 +5,7 @@ go 1.24.6
 require (
 	github.com/adshao/go-binance/v2 v2.8.7
 	github.com/cloudwego/hertz v0.10.3
+	github.com/robfig/cron/v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.0
 )
@@ -32,7 +33,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/nyaruka/phonenumbers v1.0.55 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
