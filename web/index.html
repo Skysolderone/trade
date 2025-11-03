@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交易策略分析结果</title>
+    <title>每日睡眠质量分析结果</title>
     <style>
         * {
             margin: 0;
@@ -87,6 +88,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -112,7 +114,8 @@
             color: #666;
         }
 
-        .filter-group select, .filter-group input {
+        .filter-group select,
+        .filter-group input {
             padding: 10px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
@@ -121,7 +124,8 @@
             min-width: 150px;
         }
 
-        .filter-group select:focus, .filter-group input:focus {
+        .filter-group select:focus,
+        .filter-group input:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -339,19 +343,20 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 交易策略分析结果</h1>
-            <p>基于历史数据的涨跌概率分析系统</p>
+            <h1>🚀 每日睡眠质量分析结果</h1>
+            <p>基于历史数据的睡眠质量分析系统</p>
         </div>
 
         <div class="tabs">
             <div class="tab active" onclick="switchTab('strategy1')">
-                📊 策略一：历史同期分析
+                📊 睡眠监测一：历史同期分析
             </div>
             <div class="tab" onclick="switchTab('strategy2')">
-                🕐 策略二：小时级别分析
+                🕐睡眠监测二：小时级别分析
             </div>
         </div>
 
@@ -385,7 +390,7 @@
         <div id="strategy2" class="tab-content">
             <div class="filters">
                 <div class="filter-group">
-                    <label>交易对</label>
+                    <label>用户ID</label>
                     <input type="text" id="s2-symbol" placeholder="例如：BTCUSDT">
                 </div>
                 <div class="filter-group">
@@ -403,7 +408,7 @@
                     <select id="s2-hour">
                         <option value="">全部</option>
                         <script>
-                            for(let i = 0; i < 24; i++) {
+                            for (let i = 0; i < 24; i++) {
                                 document.write(`<option value="${i}">${i}:00</option>`);
                             }
                         </script>
@@ -474,7 +479,7 @@
                         <div class="card-body">
                             <div class="stats-grid">
                                 <div class="stat-item">
-                                    <div class="stat-label">上涨率</div>
+                                    <div class="stat-label">up率</div>
                                     <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
                                     <div class="progress-bar">
                                         <div class="progress-fill" style="width: ${result.up_rate}%">
@@ -483,7 +488,7 @@
                                     </div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-label">上涨/下跌/平盘</div>
+                                    <div class="stat-label">up/down/flat</div>
                                     <div class="stat-value">${result.up_count}/${result.down_count}/${result.flat_count}</div>
                                 </div>
                                 <div class="stat-item">
@@ -573,7 +578,7 @@
                         <div class="card-body">
                             <div class="stats-grid">
                                 <div class="stat-item">
-                                    <div class="stat-label">上涨率</div>
+                                    <div class="stat-label">up率</div>
                                     <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
                                     <div class="progress-bar">
                                         <div class="progress-fill" style="width: ${result.up_rate}%">
@@ -582,11 +587,11 @@
                                     </div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-label">上涨次数</div>
+                                    <div class="stat-label">up次数</div>
                                     <div class="stat-value up">${result.up_count}</div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-label">下跌次数</div>
+                                    <div class="stat-label">down次数</div>
                                     <div class="stat-value down">${result.down_count}</div>
                                 </div>
                                 <div class="stat-item">
@@ -619,7 +624,7 @@
                                                     <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
                                                     <td>
                                                         <span class="badge ${detail.is_up ? 'up' : 'down'}">
-                                                            ${detail.is_up ? '📈 涨' : '📉 跌'}
+                                                            ${detail.is_up ? '📈 up' : '📉 down'}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -648,4 +653,5 @@
         };
     </script>
 </body>
+
 </html>
