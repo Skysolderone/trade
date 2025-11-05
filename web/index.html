@@ -73,6 +73,49 @@
             border-bottom-color: #667eea;
         }
 
+        /* 二级标签页样式 */
+        .sub-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 20px 20px 0;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .sub-tab {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .sub-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .sub-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .sub-tab-content {
+            display: none;
+        }
+
+        .sub-tab-content.active {
+            display: block;
+        }
+
         .tab-content {
             display: none;
             padding: 30px;
@@ -352,10 +395,10 @@
         </div>
 
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('strategy1')">
+            <div class="tab active" onclick="switchTab('strategy1', this)">
                 📊 睡眠监测一：历史同期分析
             </div>
-            <div class="tab" onclick="switchTab('strategy2')">
+            <div class="tab" onclick="switchTab('strategy2', this)">
                 🕐睡眠监测二：小时级别分析
             </div>
         </div>
@@ -365,7 +408,7 @@
             <div class="filters">
                 <div class="filter-group">
                     <label>交易对</label>
-                    <input type="text" id="s1-symbol" placeholder="例如：BTCUSDT">
+                    <input type="text" id="s1-symbol" placeholder="例如：🥞 或 🍪">
                 </div>
                 <div class="filter-group">
                     <label>时间周期</label>
@@ -390,8 +433,8 @@
         <div id="strategy2" class="tab-content">
             <div class="filters">
                 <div class="filter-group">
-                    <label>用户ID</label>
-                    <input type="text" id="s2-symbol" placeholder="例如：BTCUSDT">
+                    <label>交易对</label>
+                    <input type="text" id="s2-symbol" placeholder="例如：🥞 或 🍪">
                 </div>
                 <div class="filter-group">
                     <label>时间周期</label>
@@ -423,19 +466,40 @@
     </div>
 
     <script>
+        // 获取交易对显示（图标或文字）
+        function getSymbolDisplay(symbol) {
+            const symbolLower = symbol.toLowerCase();
+            if (symbolLower === 'btcusdt') {
+                return '🥞'; // 大饼
+            } else if (symbolLower === 'ethusdt') {
+                return '🍪'; // 半个饼干
+            }
+            return symbol; // 其他交易对显示原文字
+        }
+
+        // 生成安全的ID（移除特殊字符）
+        function makeSafeId(str) {
+            return str.replace(/[^a-zA-Z0-9-]/g, '_');
+        }
+
         // 切换标签
-        function switchTab(tabName) {
+        function switchTab(tabName, clickedTab) {
             // 更新标签状态
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            event.target.classList.add('active');
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
 
             // 更新内容显示
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            document.getElementById(tabName).classList.add('active');
+            const targetContent = document.getElementById(tabName);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
 
             // 自动加载数据
             if (tabName === 'strategy1') {
@@ -466,77 +530,112 @@
                     return;
                 }
 
-                resultsDiv.innerHTML = data.results.map((result, index) => `
-                    <div class="result-card">
-                        <div class="card-header">
-                            <h3>${result.symbol} - ${result.interval}</h3>
-                            <div class="meta">
-                                <span>📅 分析日期: ${result.analyze_day}</span>
-                                <span>📊 样本数: ${result.total_count}</span>
-                                <span>🔄 更新时间: ${new Date(result.updated_at).toLocaleString('zh-CN')}</span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <div class="stat-label">up率</div>
-                                    <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: ${result.up_rate}%">
-                                            ${result.up_rate.toFixed(1)}%
-                                        </div>
+                // 按日期分组
+                const groupedByDate = {};
+                data.results.forEach(result => {
+                    const date = result.analyze_day;
+                    if (!groupedByDate[date]) {
+                        groupedByDate[date] = [];
+                    }
+                    groupedByDate[date].push(result);
+                });
+
+                // 获取所有日期并排序（最新的在前）
+                const dates = Object.keys(groupedByDate).sort().reverse();
+
+                // 生成二级标签页
+                let html = '<div class="sub-tabs">';
+                dates.forEach((date, index) => {
+                    const safeId = makeSafeId(date);
+                    html += `<div class="sub-tab ${index === 0 ? 'active' : ''}" onclick="switchSubTab('s1', '${safeId}', event)" data-key="${date}">${date}</div>`;
+                });
+                html += '</div>';
+
+                // 生成每个日期的内容
+                dates.forEach((date, dateIndex) => {
+                    const safeId = makeSafeId(date);
+                    html += `<div id="s1-date-${safeId}" class="sub-tab-content ${dateIndex === 0 ? 'active' : ''}" style="padding: 30px;">`;
+                    html += '<div class="results">';
+
+                    groupedByDate[date].forEach((result, index) => {
+                        const globalIndex = makeSafeId(`${date}-${index}`);
+                        html += `
+                            <div class="result-card">
+                                <div class="card-header">
+                                    <h3>${getSymbolDisplay(result.symbol)} - ${result.interval}</h3>
+                                    <div class="meta">
+                                        <span>📅 分析日期: ${result.analyze_day}</span>
+                                        <span>📊 样本数: ${result.total_count}</span>
+                                        <span>🔄 更新时间: ${new Date(result.updated_at).toLocaleString('zh-CN')}</span>
                                     </div>
                                 </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">up/down/flat</div>
-                                    <div class="stat-value">${result.up_count}/${result.down_count}/${result.flat_count}</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">最佳月份</div>
-                                    <div class="stat-value up">${result.best_month}月 (${result.best_up_rate.toFixed(2)}%)</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">最差月份</div>
-                                    <div class="stat-value down">${result.worst_month}月 (${result.worst_up_rate.toFixed(2)}%)</div>
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <div class="stat-label">up率</div>
+                                            <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: ${result.up_rate}%">
+                                                    ${result.up_rate.toFixed(1)}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">up/down/flat</div>
+                                            <div class="stat-value">${result.up_count}/${result.down_count}/${result.flat_count}</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">最佳月份</div>
+                                            <div class="stat-value up">${result.best_month}月 (${result.best_up_rate.toFixed(2)}%)</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">最差月份</div>
+                                            <div class="stat-value down">${result.worst_month}月 (${result.worst_up_rate.toFixed(2)}%)</div>
+                                        </div>
+                                    </div>
+
+                                    ${result.details && result.details.length > 0 ? `
+                                        <button class="detail-toggle" onclick="toggleDetails('${globalIndex}', 's1')">
+                                            查看详细记录 (${result.details.length}条)
+                                        </button>
+                                        <div id="s1-details-${globalIndex}" class="details-table">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>年份</th>
+                                                        <th>开盘价</th>
+                                                        <th>收盘价</th>
+                                                        <th>价差</th>
+                                                        <th>涨跌</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${result.details.map(detail => `
+                                                        <tr>
+                                                            <td>${detail.year}</td>
+                                                            <td>${detail.open_price.toFixed(2)}</td>
+                                                            <td>${detail.close_price.toFixed(2)}</td>
+                                                            <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
+                                                            <td>
+                                                                <span class="badge ${detail.is_up ? 'up' : 'down'}">
+                                                                    ${detail.is_up ? '📈 涨' : '📉 跌'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
+                        `;
+                    });
 
-                            ${result.details && result.details.length > 0 ? `
-                                <button class="detail-toggle" onclick="toggleDetails(${index}, 's1')">
-                                    查看详细记录 (${result.details.length}条)
-                                </button>
-                                <div id="s1-details-${index}" class="details-table">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>年份</th>
-                                                <th>开盘价</th>
-                                                <th>收盘价</th>
-                                                <th>价差</th>
-                                                <th>涨跌</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${result.details.map(detail => `
-                                                <tr>
-                                                    <td>${detail.year}</td>
-                                                    <td>${detail.open_price.toFixed(2)}</td>
-                                                    <td>${detail.close_price.toFixed(2)}</td>
-                                                    <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
-                                                    <td>
-                                                        <span class="badge ${detail.is_up ? 'up' : 'down'}">
-                                                            ${detail.is_up ? '📈 涨' : '📉 跌'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `).join('');
+                    html += '</div></div>';
+                });
+
+                resultsDiv.innerHTML = html;
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
             }
@@ -565,79 +664,153 @@
                     return;
                 }
 
-                resultsDiv.innerHTML = data.results.map((result, index) => `
-                    <div class="result-card">
-                        <div class="card-header">
-                            <h3>${result.symbol} - ${result.interval} - ${result.hour}:00</h3>
-                            <div class="meta">
-                                <span>⏰ 时段: ${result.hour}:00</span>
-                                <span>📊 样本数: ${result.total_count}</span>
-                                <span>🔄 更新时间: ${new Date(result.updated_at).toLocaleString('zh-CN')}</span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <div class="stat-label">up率</div>
-                                    <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: ${result.up_rate}%">
-                                            ${result.up_rate.toFixed(1)}%
-                                        </div>
+                // 按交易对+周期分组
+                const groupedBySymbol = {};
+                data.results.forEach(result => {
+                    const key = `${getSymbolDisplay(result.symbol)} - ${result.interval}`;
+                    if (!groupedBySymbol[key]) {
+                        groupedBySymbol[key] = [];
+                    }
+                    groupedBySymbol[key].push(result);
+                });
+
+                // 获取所有分组键并排序
+                const keys = Object.keys(groupedBySymbol).sort();
+
+                // 生成二级标签页
+                let html = '<div class="sub-tabs">';
+                keys.forEach((key, index) => {
+                    const safeId = makeSafeId(key);
+                    html += `<div class="sub-tab ${index === 0 ? 'active' : ''}" onclick="switchSubTab('s2', '${safeId}', event)" data-key="${key}">${key}</div>`;
+                });
+                html += '</div>';
+
+                // 生成每个分组的内容
+                keys.forEach((key, keyIndex) => {
+                    const safeId = makeSafeId(key);
+                    html += `<div id="s2-date-${safeId}" class="sub-tab-content ${keyIndex === 0 ? 'active' : ''}" style="padding: 30px;">`;
+                    html += '<div class="results">';
+
+                    groupedBySymbol[key].forEach((result, index) => {
+                        const globalIndex = makeSafeId(`${key}-${index}`);
+                        html += `
+                            <div class="result-card">
+                                <div class="card-header">
+                                    <h3>${getSymbolDisplay(result.symbol)} - ${result.interval} - ${result.hour}:00</h3>
+                                    <div class="meta">
+                                        <span>⏰ 时段: ${result.hour}:00</span>
+                                        <span>📊 样本数: ${result.total_count}</span>
+                                        <span>🔄 更新时间: ${new Date(result.updated_at).toLocaleString('zh-CN')}</span>
                                     </div>
                                 </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">up次数</div>
-                                    <div class="stat-value up">${result.up_count}</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">down次数</div>
-                                    <div class="stat-value down">${result.down_count}</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-label">平盘次数</div>
-                                    <div class="stat-value">${result.flat_count}</div>
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <div class="stat-label">up率</div>
+                                            <div class="stat-value up">${result.up_rate.toFixed(2)}%</div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: ${result.up_rate}%">
+                                                    ${result.up_rate.toFixed(1)}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">up次数</div>
+                                            <div class="stat-value up">${result.up_count}</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">down次数</div>
+                                            <div class="stat-value down">${result.down_count}</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">平盘次数</div>
+                                            <div class="stat-value">${result.flat_count}</div>
+                                        </div>
+                                    </div>
+
+                                    ${result.details && result.details.length > 0 ? `
+                                        <button class="detail-toggle" onclick="toggleDetails('${globalIndex}', 's2')">
+                                            查看详细记录 (${result.details.length}条)
+                                        </button>
+                                        <div id="s2-details-${globalIndex}" class="details-table">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>日期</th>
+                                                        <th>开盘价</th>
+                                                        <th>收盘价</th>
+                                                        <th>价差</th>
+                                                        <th>涨跌</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${result.details.map(detail => `
+                                                        <tr>
+                                                            <td>${detail.date}</td>
+                                                            <td>${detail.open_price.toFixed(2)}</td>
+                                                            <td>${detail.close_price.toFixed(2)}</td>
+                                                            <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
+                                                            <td>
+                                                                <span class="badge ${detail.is_up ? 'up' : 'down'}">
+                                                                    ${detail.is_up ? '📈 up' : '📉 down'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
+                        `;
+                    });
 
-                            ${result.details && result.details.length > 0 ? `
-                                <button class="detail-toggle" onclick="toggleDetails(${index}, 's2')">
-                                    查看详细记录 (${result.details.length}条)
-                                </button>
-                                <div id="s2-details-${index}" class="details-table">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>日期</th>
-                                                <th>开盘价</th>
-                                                <th>收盘价</th>
-                                                <th>价差</th>
-                                                <th>涨跌</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${result.details.map(detail => `
-                                                <tr>
-                                                    <td>${detail.date}</td>
-                                                    <td>${detail.open_price.toFixed(2)}</td>
-                                                    <td>${detail.close_price.toFixed(2)}</td>
-                                                    <td>${detail.price_diff > 0 ? '+' : ''}${detail.price_diff.toFixed(2)}</td>
-                                                    <td>
-                                                        <span class="badge ${detail.is_up ? 'up' : 'down'}">
-                                                            ${detail.is_up ? '📈 up' : '📉 down'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `).join('');
+                    html += '</div></div>';
+                });
+
+                resultsDiv.innerHTML = html;
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 切换二级标签页
+        function switchSubTab(strategy, safeId, event) {
+            // 映射简写到完整ID
+            const containerMap = {
+                's1': 'strategy1',
+                's2': 'strategy2',
+                'strategy1': 'strategy1',
+                'strategy2': 'strategy2'
+            };
+            const containerId = containerMap[strategy] || strategy;
+
+            // 更新二级标签状态
+            const container = document.getElementById(`${containerId}-results`);
+            if (!container) {
+                return;
+            }
+
+            const tabs = container.querySelectorAll('.sub-tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 激活点击的标签
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            // 更新内容显示
+            const contents = container.querySelectorAll('.sub-tab-content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const targetContent = document.getElementById(`${strategy}-date-${safeId}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
             }
         }
 
