@@ -139,6 +139,7 @@ func calculateHourStats(hour int, klines []model.Kline) *HourStats {
 			ClosePrice: kline.Close,
 			PriceDiff:  priceDiff,
 			IsUp:       isUp,
+			CloseTime:  kline.CloseTime,
 		}
 		stats.Records = append(stats.Records, record)
 
@@ -363,6 +364,7 @@ func saveStrategy2Result(symbol, interval string, allHourStats []*HourStats) {
 				ClosePrice: record.ClosePrice,
 				PriceDiff:  record.PriceDiff,
 				IsUp:       record.IsUp,
+				CloseTime:  record.CloseTime,
 			}
 			if err := db.Pog.Create(detailRecord).Error; err != nil {
 				fmt.Printf("⚠️ 保存详细记录失败: %v\n", err)

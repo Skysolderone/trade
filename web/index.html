@@ -482,6 +482,28 @@
             return str.replace(/[^a-zA-Z0-9-]/g, '_');
         }
 
+        // 格式化时间显示
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+
+            const date = new Date(timeStr);
+
+            // 检查是否是有效日期
+            if (isNaN(date.getTime())) return '-';
+
+            // 检查是否是 Go 的零值时间 (0001-01-01)
+            if (date.getFullYear() < 1900) return '-';
+
+            // 使用更清晰的格式：年-月-日 时:分
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
+
+            return `${year}-${month}-${day} ${hour}:${minute}`;
+        }
+
         // 切换标签
         function switchTab(tabName, clickedTab) {
             // 更新标签状态
@@ -607,6 +629,7 @@
                                                         <th>收盘价</th>
                                                         <th>价差</th>
                                                         <th>涨跌</th>
+                                                        <th>时间</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -621,6 +644,7 @@
                                                                     ${detail.is_up ? '📈 涨' : '📉 跌'}
                                                                 </span>
                                                             </td>
+                                                            <td>${formatTime(detail.close_time)}</td>
                                                         </tr>
                                                     `).join('')}
                                                 </tbody>
@@ -741,6 +765,7 @@
                                                         <th>收盘价</th>
                                                         <th>价差</th>
                                                         <th>涨跌</th>
+                                                        <th>时间</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -755,6 +780,7 @@
                                                                     ${detail.is_up ? '📈 up' : '📉 down'}
                                                                 </span>
                                                             </td>
+                                                            <td>${formatTime(detail.close_time)}</td>
                                                         </tr>
                                                     `).join('')}
                                                 </tbody>

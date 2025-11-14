@@ -11,11 +11,12 @@ import (
 
 // KlineRecord 单条K线记录
 type KlineRecord struct {
-	Year       string  // 年份
-	OpenPrice  float64 // 开盘价
-	ClosePrice float64 // 收盘价
-	PriceDiff  float64 // 价差 (收盘价 - 开盘价)
-	IsUp       bool    // 是否上涨
+	Year       string    // 年份
+	OpenPrice  float64   // 开盘价
+	ClosePrice float64   // 收盘价
+	PriceDiff  float64   // 价差 (收盘价 - 开盘价)
+	IsUp       bool      // 是否上涨
+	CloseTime  time.Time // 收盘时间
 }
 
 // DayStats 每个日期的统计数据
@@ -152,6 +153,7 @@ func analyzeAllYearsSameDate(symbol, interval string, month, day int) []KlineRec
 			ClosePrice: kline.Close,
 			PriceDiff:  priceDiff,
 			IsUp:       isUp,
+			CloseTime:  kline.CloseTime,
 		}
 		records = append(records, record)
 	}
@@ -184,6 +186,7 @@ func calculateStats(dateStr string, month int, klines []model.Kline) *DayStats {
 			ClosePrice: kline.Close,
 			PriceDiff:  priceDiff,
 			IsUp:       isUp,
+			CloseTime:  kline.CloseTime,
 		}
 		stats.Records = append(stats.Records, record)
 
@@ -506,6 +509,7 @@ func saveStrategy1Result(symbol, interval string, month, day int, currentStats *
 			ClosePrice: record.ClosePrice,
 			PriceDiff:  record.PriceDiff,
 			IsUp:       record.IsUp,
+			CloseTime:  record.CloseTime,
 		}
 		if err := db.Pog.Create(detailRecord).Error; err != nil {
 			fmt.Printf("⚠️ 保存详细记录失败: %v\n", err)

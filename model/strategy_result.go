@@ -34,6 +34,7 @@ type Strategy1DetailRecord struct {
 	ClosePrice float64  `json:"close_price"`             // 收盘价
 	PriceDiff float64   `json:"price_diff"`              // 价差
 	IsUp      bool      `json:"is_up"`                   // 是否上涨
+	CloseTime time.Time `json:"close_time"`              // 收盘时间
 	CreatedAt time.Time `json:"created_at"`              // 创建时间
 }
 
@@ -61,5 +62,6 @@ type Strategy2DetailRecord struct {
 	ClosePrice float64   `json:"close_price"`            // 收盘价
 	PriceDiff  float64   `json:"price_diff"`             // 价差
 	IsUp       bool      `json:"is_up"`                  // 是否上涨
+	CloseTime  time.Time `json:"close_time"`             // 收盘时间
 	CreatedAt  time.Time `json:"created_at"`             // 创建时间
 }

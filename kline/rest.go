@@ -25,7 +25,7 @@ func UpdateKline(symbol string, interval string) {
 	var startTime time.Time
 	if result.Error != nil || result.RowsAffected == 0 {
 		// 如果没有找到记录,从默认时间开始
-		fmt.Printf("未找到 %s 的历史数据,将从 2018-01-01 开始获取\n", symbol)
+		fmt.Printf("未找到 %s 的历史数据,将从 2018-08-01 开始获取\n", symbol)
 		startTime = time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 	} else {
 		// 删除最新记录(因为它可能是不完整的)
@@ -70,7 +70,7 @@ func updateKlineData(api *futures.Client, symbol string, interval string, startT
 
 	for {
 		// 计算当前批次的结束时间
-		batchEndTime := startTime.Add(time.Duration(1500) * getIntervalDuration(interval))
+		batchEndTime := startTime.Add(time.Duration(1000) * getIntervalDuration(interval))
 		if batchEndTime.After(endTime) {
 			batchEndTime = endTime
 		}
@@ -85,13 +85,13 @@ func updateKlineData(api *futures.Client, symbol string, interval string, startT
 			Interval(interval).
 			StartTime(startTime.UnixMilli()).
 			EndTime(batchEndTime.UnixMilli()).
-			Limit(1500).
+			Limit(1000).
 			Do(context.Background())
 		if err != nil {
 			fmt.Printf("获取K线数据失败: %v\n", err)
 			return
 		}
-
+		fmt.Println(kline)
 		if len(kline) == 0 {
 			fmt.Println("没有更多数据了")
 			break
